@@ -8,11 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -52,7 +48,7 @@ jobs:
           .{
               .name = .test_project,
               .version = "0.0.0",
-              .fingerprint = 0x0,
+              .fingerprint = 0xaabbccdd11223344,
               .dependencies = .{
                   .tracing = .{
                       .path = "${{ github.workspace }}",

@@ -11,14 +11,14 @@ zig fetch --save git+https://github.com/mikkurogue/tracing-zig
 Then add the import in your `build.zig`:
 
 ```zig
-const tracing = b.dependency("tracing", .{});
+const tracing = b.dependency("tracing", .{}).module("tracing");
 
 const exe = b.addExecutable(.{
     .name = "my-app",
     .root_module = b.createModule(.{
         .root_source_file = b.path("src/main.zig"),
         .imports = &.{
-            .{ .name = "tracing", .module = tracing.module("tracing") },
+            .{ .name = "tracing", .module = tracing },
         },
     }),
 });

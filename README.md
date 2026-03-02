@@ -5,7 +5,7 @@ A minimal tracing library in zig.
 ## Installation
 
 ```bash
-zig fetch --save git+https://github.com/yourusername/tracing-zig
+zig fetch --save git+https://github.com/mikkurogue/tracing-zig
 ```
 
 Then add the import in your `build.zig`:

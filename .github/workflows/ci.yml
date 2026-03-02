@@ -43,11 +43,18 @@ jobs:
           mkdir -p /tmp/test-project
           cd /tmp/test-project
 
-          # Create a minimal build.zig.zon (no fingerprint needed for local test project)
-          cat > build.zig.zon << 'EOF'
+          # Use zig init to create a project with valid fingerprint
+          zig init
+
+          # Extract the fingerprint from generated build.zig.zon
+          FINGERPRINT=$(grep -oP '\.fingerprint = \K0x[0-9a-f]+' build.zig.zon)
+
+          # Overwrite build.zig.zon with our test config (using the valid fingerprint)
+          cat > build.zig.zon << EOF
           .{
               .name = .test_project,
               .version = "0.0.0",
+              .fingerprint = $FINGERPRINT,
               .dependencies = .{
                   .tracing = .{
                       .path = "${{ github.workspace }}",
@@ -79,8 +86,7 @@ jobs:
           }
           EOF
 
-          # Create test source
-          mkdir -p src
+          # Overwrite the generated main.zig with our test
           cat > src/main.zig << 'EOF'
           const tracing = @import("tracing");
           pub fn main() void {

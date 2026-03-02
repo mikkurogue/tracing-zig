@@ -49,6 +49,9 @@ jobs:
           # Extract the fingerprint from generated build.zig.zon
           FINGERPRINT=$(grep -oP '\.fingerprint = \K0x[0-9a-f]+' build.zig.zon)
 
+          # Compute relative path from /tmp/test-project to workspace
+          RELATIVE_PATH=$(realpath --relative-to=. "${{ github.workspace }}")
+
           # Overwrite build.zig.zon with our test config (using the valid fingerprint)
           cat > build.zig.zon << EOF
           .{
@@ -57,7 +60,7 @@ jobs:
               .fingerprint = $FINGERPRINT,
               .dependencies = .{
                   .tracing = .{
-                      .path = "${{ github.workspace }}",
+                      .path = "$RELATIVE_PATH",
                   },
               },
               .paths = .{

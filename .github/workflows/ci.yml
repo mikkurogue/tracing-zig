@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.2
+
+      - name: Check formatting
+        run: zig fmt --check src/
+
+      - name: Run tests
+        run: zig build test
+
+      - name: Build example
+        run: zig build
+
+  # Test that the package can be fetched and used
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.2
+
+      - name: Test package integration
+        run: |
+          mkdir -p /tmp/test-project
+          cd /tmp/test-project
+
+          # Create a minimal build.zig.zon
+          cat > build.zig.zon << 'EOF'
+          .{
+              .name = .test_project,
+              .version = "0.0.0",
+              .fingerprint = 0x0,
+              .dependencies = .{
+                  .tracing = .{
+                      .path = "${{ github.workspace }}",
+                  },
+              },
+              .paths = .{
+                  "build.zig",
+                  "build.zig.zon",
+                  "src",
+              },
+          }
+          EOF
+
+          # Create build.zig
+          cat > build.zig << 'EOF'
+          const std = @import("std");
+          pub fn build(b: *std.Build) void {
+              const tracing = b.dependency("tracing", .{});
+              const exe = b.addExecutable(.{
+                  .name = "test",
+                  .root_module = b.createModule(.{
+                      .root_source_file = b.path("src/main.zig"),
+                      .imports = &.{
+                          .{ .name = "tracing", .module = tracing.module("tracing") },
+                      },
+                  }),
+              });
+              b.installArtifact(exe);
+          }
+          EOF
+
+          # Create test source
+          mkdir -p src
+          cat > src/main.zig << 'EOF'
+          const tracing = @import("tracing");
+          pub fn main() void {
+              tracing.info("integration test works", @src());
+          }
+          EOF
+
+          # Build it
+          zig build
